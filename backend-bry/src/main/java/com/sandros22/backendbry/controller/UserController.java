@@ -36,7 +36,7 @@ public class UserController {
         return userService.findById(userId).orElse(null);
     }
 
-    @PostMapping("/create-user")
+    @PostMapping("/users/create-user")
     public HttpStatus createUser(User user) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
         String hashedCpf = encriptador.encode(user.getCpf());
@@ -64,6 +64,5 @@ public class UserController {
         BeanUtils.copyProperties(updatedUser, oldUser.get());
         userService.save(oldUser.get());
         return HttpStatus.OK;
-
     }
 }
