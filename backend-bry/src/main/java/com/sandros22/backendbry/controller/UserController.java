@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,13 +29,13 @@ public class UserController {
         return userService.findAll();
     }
 
-    @GetMapping("/users/{userId}")
-    public User findUser(@PathVariable Integer userId) {
+    @GetMapping("/user")
+    public User findUser(@RequestParam Integer userId) {
         return userService.findById(userId).orElse(null);
     }
 
     @PostMapping("/users/create-user")
-    public HttpStatus createUser(User user) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public HttpStatus createUser(User user){
         BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
         String hashedCpf = encriptador.encode(user.getCpf());
         user.setCpf(hashedCpf);
@@ -45,8 +43,8 @@ public class UserController {
         return HttpStatus.CREATED;
     }
 
-    @DeleteMapping("/users/{userId}")
-    public HttpStatus deleteUser(@PathVariable Integer userId) {
+    @DeleteMapping("/users/")
+    public HttpStatus deleteUser(@RequestParam Integer userId) {
         Optional<User> user = userService.findById(userId);
         if (user.isEmpty()) {
             return HttpStatus.NOT_FOUND;
