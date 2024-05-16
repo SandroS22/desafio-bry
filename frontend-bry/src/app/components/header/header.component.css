@@ -1,0 +1,8 @@
+.app-header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #34b6ff;
+    height: 50px;
+    font-family: Arial, Helvetica, sans-serif
+}
