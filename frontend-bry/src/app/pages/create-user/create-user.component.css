@@ -1,0 +1,12 @@
+.app-create-user{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.entrada-dado{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
