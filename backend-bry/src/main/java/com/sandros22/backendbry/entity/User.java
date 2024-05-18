@@ -2,8 +2,6 @@ package com.sandros22.backendbry.entity;
 
 import jakarta.persistence.*;
 
-import javax.imageio.stream.ImageInputStream;
-
 @Entity
 @Table(name = "users")
 public class User {
