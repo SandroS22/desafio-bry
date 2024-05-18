@@ -4,6 +4,8 @@ import com.sandros22.backendbry.entity.User;
 import com.sandros22.backendbry.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -43,14 +46,14 @@ public class UserController {
         return HttpStatus.CREATED;
     }
 
-    @DeleteMapping("/users/")
-    public HttpStatus deleteUser(@RequestParam Integer userId) {
+    @DeleteMapping("/users/delete-user/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Integer userId) {
         Optional<User> user = userService.findById(userId);
         if (user.isEmpty()) {
-            return HttpStatus.NOT_FOUND;
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         userService.deleteById(userId);
-        return HttpStatus.OK;
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PatchMapping("/users")
@@ -61,6 +64,6 @@ public class UserController {
         }
         BeanUtils.copyProperties(updatedUser, oldUser.get());
         userService.save(oldUser.get());
-        return HttpStatus.OK;
+        return HttpStatus.NO_CONTENT;
     }
 }
