@@ -1,0 +1,19 @@
+.entrada{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+}
+
+.app-delete-user{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.message{
+    margin-top: 15px;
+    font-size: 24px;
+    background-color: gainsboro;
+}

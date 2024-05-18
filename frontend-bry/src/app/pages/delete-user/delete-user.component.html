@@ -1,0 +1,11 @@
+<app-header></app-header>
+<div class="app-delete-user">
+    <div *ngIf="message" class="message">
+        {{ message }}
+      </div>
+    <h1>Excluir Usuário</h1>
+    <div class="entrada">
+        <input [(ngModel)]="id" placeholder="Insira o ID do usuário">
+    <button (click)="deleteUser()">Excluir</button>
+</div>
+</div>
