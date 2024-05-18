@@ -11,10 +11,14 @@ import { Router } from '@angular/router';
 })
 export class HomeComponent {
 
+
     constructor(private router: Router){}
 
     redirecionaListar(){
         this.router.navigate(['/users'])
     }
 
+    redirecionaExcluir() {
+        this.router.navigate(['/delete-user'])
+    }
 }
