@@ -19,7 +19,7 @@ export class DeleteUserComponent {
 
     id: number = 0;
 
-    message: string = ''
+    message: string = '';
 
     deleteUser(){
         this.userService.deleterUser(this.id).pipe(
@@ -32,7 +32,7 @@ export class DeleteUserComponent {
               } else {
                 this.message = 'Um erro ocorreu! Tente novamente.';
               }
-              return of(null); // Return a safe value to keep the observable chain alive
+              return of(null);
             })
           ).subscribe();
         }
