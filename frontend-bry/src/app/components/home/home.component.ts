@@ -25,4 +25,8 @@ export class HomeComponent {
     redirecionaExcluir() {
         this.router.navigate(['/delete-user'])
     }
+
+    redirecionaAtualizar() {
+        this.router.navigate(['/update-user'])
+    }
 }

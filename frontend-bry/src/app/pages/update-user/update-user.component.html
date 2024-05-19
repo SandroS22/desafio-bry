@@ -1,1 +1,17 @@
-<p>update-user works!</p>
+<app-header></app-header>
+<div class="app-update-user">
+    <div *ngIf="message" class="message">
+        {{ message }}
+      </div>
+    <div class="entrada-dado">
+        <h3>Insira o ID do usuário: </h3> <input [(ngModel)]="id" placeholder="Insira o ID do usuário">
+        <button (click)="buscarUsuario()">BUSCAR</button>
+    </div>
+    <div *ngIf="visible">
+        <h1>Insira os novos dados</h1>
+        <div class="entrada-dado-atualizado">
+            <h3>NOME: </h3> <input [(ngModel)]="user.name" placeholder="Insira o nome do usuário">
+            <button (click)="updateUser()">SALVAR</button>
+        </div>
+    </div>
+</div>
