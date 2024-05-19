@@ -1,18 +1,18 @@
-.app-create-user{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.app-create-user {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
-.entrada-dado{
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.entrada-dado {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.message{
-    margin-top: 15px;
-    font-size: 24px;
-    background-color: gainsboro;
+.message {
+  margin-top: 15px;
+  font-size: 24px;
+  background-color: gainsboro;
 }

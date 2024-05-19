@@ -1,32 +1,30 @@
 import { Component } from '@angular/core';
-import { HeaderComponent } from "../header/header.component";
+import { HeaderComponent } from '../header/header.component';
 import { Router } from '@angular/router';
 
 @Component({
-    selector: 'app-home',
-    standalone: true,
-    templateUrl: './home.component.html',
-    styleUrl: './home.component.css',
-    imports: [HeaderComponent]
+  selector: 'app-home',
+  standalone: true,
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.css',
+  imports: [HeaderComponent],
 })
 export class HomeComponent {
+  constructor(private router: Router) {}
 
+  redirecionaCriarUsuario() {
+    this.router.navigate(['/create-user']);
+  }
 
-    constructor(private router: Router){}
+  redirecionaListar() {
+    this.router.navigate(['/users']);
+  }
 
-    redirecionaCriarUsuario(){
-        this.router.navigate(['/create-user'])
-    }
+  redirecionaExcluir() {
+    this.router.navigate(['/delete-user']);
+  }
 
-    redirecionaListar(){
-        this.router.navigate(['/users'])
-    }
-
-    redirecionaExcluir() {
-        this.router.navigate(['/delete-user'])
-    }
-
-    redirecionaAtualizar() {
-        this.router.navigate(['/update-user'])
-    }
+  redirecionaAtualizar() {
+    this.router.navigate(['/update-user']);
+  }
 }
