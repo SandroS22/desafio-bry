@@ -60,7 +60,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PatchMapping("/users")
+    @PatchMapping("/users/update-user")
     public ResponseEntity<Void> updateUser(User updatedUser) {
         Optional<User> oldUser = userService.findById(updatedUser.getId());
         if (oldUser.isEmpty()) {
