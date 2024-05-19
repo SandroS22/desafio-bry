@@ -1,11 +1,14 @@
 <app-header></app-header>
 <div class="app-create-user">
+    <div *ngIf="message" class="message">
+        {{ message }}
+      </div>
     <h1>Insira os dados do usuário</h1>
     <div class="entrada-dado">
-        <h3>NOME: </h3> <input type="text" id="nome">
+        <h3>NOME: </h3> <input [(ngModel)]="user.name" placeholder="Insira o nome do usuário">
     </div>
     <div class="entrada-dado">
-        <h3>CPF: </h3> <input type="text" id="id">
+        <h3>CPF: </h3> <input [(ngModel)]="user.cpf" placeholder="Insira o CPF do usuário">
     </div>
-    <button>SALVAR</button>
+    <button (click)="createUser()">SALVAR</button>
 </div>
