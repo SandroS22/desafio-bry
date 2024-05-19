@@ -33,6 +33,10 @@ export class UsersService {
     return this.httpClient.get<User>(`${this.apiUrl}/user/${id}`);
   }
 
+  findByCpf(cpf: string): Observable<User>{
+    return this.httpClient.get<User>(`${this.apiUrl}/user/cpf/${cpf}`);
+  }
+
   updateUser(user: User): Observable<User> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     return this.httpClient.patch<User>(

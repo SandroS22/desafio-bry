@@ -1,6 +1,19 @@
 <app-header></app-header>
-<ul>
-    <li *ngFor="let user of users">
-      ID: {{ user.id }}, Nome: {{ user.name }}, CPF: {{ user.cpf }}
-      </li>
+<div *ngIf="message" class="message">
+  {{ message }}
+</div>
+<div class="busca">
+  <input id="cpf" [(ngModel)]="cpf" name="cpf" placeholder="Filtrar por CPF">
+  <button (click)="findUserbyCpf()">Search</button>
+</div>
+<div *ngIf="filtered">
+  <ul>
+    <li> ID: {{ filteredUser.id }}, Nome: {{ filteredUser.name }}, CPF: {{ filteredUser.cpf }}</li>
+  </ul>
+</div>
+
+<ul *ngIf="!filtered">
+  <li *ngFor="let user of users">
+    ID: {{ user.id }}, Nome: {{ user.name }}, CPF: {{ user.cpf }}
+  </li>
 </ul>
