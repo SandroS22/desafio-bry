@@ -2,6 +2,7 @@ package com.sandros22.backendbry.controller;
 
 import com.sandros22.backendbry.entity.User;
 import com.sandros22.backendbry.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -38,12 +39,15 @@ public class UserController {
     }
 
     @PostMapping("/users/create-user")
-    public HttpStatus createUser(User user){
+    public ResponseEntity<Void> createUser(@Valid @RequestBody User user){
+        User finalUser = new User();
+        finalUser.setName(user.getName());
+        finalUser.setFace(user.getFace());
         BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
         String hashedCpf = encriptador.encode(user.getCpf());
-        user.setCpf(hashedCpf);
-        userService.save(user);
-        return HttpStatus.CREATED;
+        finalUser.setCpf(hashedCpf);
+        userService.save(finalUser);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/users/delete-user/{userId}")
@@ -57,13 +61,13 @@ public class UserController {
     }
 
     @PatchMapping("/users")
-    public HttpStatus updateUser(User updatedUser) {
+    public ResponseEntity<Void> updateUser(User updatedUser) {
         Optional<User> oldUser = userService.findById(updatedUser.getId());
         if (oldUser.isEmpty()) {
-            return HttpStatus.NOT_FOUND;
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         BeanUtils.copyProperties(updatedUser, oldUser.get());
         userService.save(oldUser.get());
-        return HttpStatus.NO_CONTENT;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 }
