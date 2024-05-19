@@ -14,6 +14,10 @@ export class HomeComponent {
 
     constructor(private router: Router){}
 
+    redirecionaCriarUsuario(){
+        this.router.navigate(['/create-user'])
+    }
+
     redirecionaListar(){
         this.router.navigate(['/users'])
     }
