@@ -2,6 +2,7 @@ package com.sandros22.backendbry.service;
 
 import com.sandros22.backendbry.entity.User;
 import com.sandros22.backendbry.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,4 +33,15 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
+    public Optional<User> findByCpf(String cpf) {
+        BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
+        List<User> users = userRepository.findAll();
+        Optional<User> returnUser = Optional.empty();
+        for (User user : users) {
+            if (encriptador.matches(cpf, user.getCpf())) {
+                returnUser = Optional.of(user);
+            }
+        }
+        return returnUser;
+    }
 }

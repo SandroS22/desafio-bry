@@ -33,13 +33,28 @@ public class UserController {
         return userService.findAll();
     }
 
-    @GetMapping("/user")
-    public User findUser(@RequestParam Integer userId) {
-        return userService.findById(userId).orElse(null);
+    @GetMapping("/user/{userId}")
+    public Object findUser(@PathVariable Integer userId) {
+        Optional<User> user = userService.findById(userId);
+        if (user.isPresent()) {
+            return user.get();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @GetMapping("/user/cpf/{cpf}")
+    public Object findUserByCpf(@PathVariable String cpf) {
+        Optional<User> user = userService.findByCpf(cpf);
+        if (user.isPresent()) {
+            return user.get();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PostMapping("/users/create-user")
-    public ResponseEntity<Void> createUser(@Valid @RequestBody User user){
+    public ResponseEntity<Void> createUser(@Valid @RequestBody User user) {
         User finalUser = new User();
         finalUser.setName(user.getName());
         finalUser.setFace(user.getFace());
@@ -61,13 +76,13 @@ public class UserController {
     }
 
     @PatchMapping("/users/update-user")
-    public ResponseEntity<Void> updateUser(User updatedUser) {
+    public ResponseEntity<Void> updateUser(@RequestBody User updatedUser) {
         Optional<User> oldUser = userService.findById(updatedUser.getId());
         if (oldUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        BeanUtils.copyProperties(updatedUser, oldUser.get());
+        oldUser.get().setName(updatedUser.getName());
         userService.save(oldUser.get());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
