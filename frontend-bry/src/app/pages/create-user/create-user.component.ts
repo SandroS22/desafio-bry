@@ -31,9 +31,7 @@ export class CreateUserComponent {
               this.user.name = ''
             }),
             catchError(error => {
-              if (error.status === 404) {
-                this.message = 'Usuário não encontrado.';
-              } else {
+              if (error.status === 500) {
                 this.message = 'Um erro ocorreu! Tente novamente.';
               }
               return of(null);
