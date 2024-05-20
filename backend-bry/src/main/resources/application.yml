@@ -1,1 +1,12 @@
-spring.application.name=backend-bry
+spring:
+    application:
+        name: backend-bry
+    datasource:
+        username: postgres
+        password: 1234
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://localhost:5432/db-bry
+    jpa:
+        hibernate:
+            ddl-auto: update
+        database: postgresql
