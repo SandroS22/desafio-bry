@@ -13,5 +13,5 @@
 * Crie um banco de dados postgres local chamado db-bry.
 * Entre no arquivo application.yml em src/resources e altere o `username` e `password` para as informações do seu banco.
 * De run no arquivo main src/main/java
-* Abra um terminal e vá até o diretório frontend-bry e digite o comando `ng serve`. Para isso você deve ter o angular cli.
+* Abra um terminal e vá até o diretório frontend-bry e digite o comando `npm install` depois `ng serve`. Para isso você deve ter o angular cli e o nodejs.
 * Abra uma aba no navegador e vá para http://localhost:4200/
