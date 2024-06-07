@@ -54,7 +54,6 @@ public class UserController {
 
     @PostMapping("/users/create-user")
     public ResponseEntity<Void> createUser(@Valid @RequestBody User user) {
-        System.out.println(userService.validateCpf(user.getCpf()));
         if (userService.validateCpf(user.getCpf())) {
             User finalUser = new User();
             finalUser.setName(user.getName());
