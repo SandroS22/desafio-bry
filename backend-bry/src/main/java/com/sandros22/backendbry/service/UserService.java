@@ -1,5 +1,6 @@
 package com.sandros22.backendbry.service;
 
+import br.com.caelum.stella.validation.CPFValidator;
 import com.sandros22.backendbry.entity.User;
 import com.sandros22.backendbry.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -43,5 +44,15 @@ public class UserService {
             }
         }
         return returnUser;
+    }
+
+    public Boolean validateCpf(String cpf) {
+        CPFValidator cpfValidator = new CPFValidator();
+        try {
+            cpfValidator.assertValid(cpf);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 }

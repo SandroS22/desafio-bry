@@ -1,5 +1,6 @@
 package com.sandros22.backendbry.controller;
 
+import br.com.caelum.stella.validation.CPFValidator;
 import com.sandros22.backendbry.entity.User;
 import com.sandros22.backendbry.service.UserService;
 import jakarta.validation.Valid;
@@ -53,14 +54,18 @@ public class UserController {
 
     @PostMapping("/users/create-user")
     public ResponseEntity<Void> createUser(@Valid @RequestBody User user) {
-        User finalUser = new User();
-        finalUser.setName(user.getName());
-        finalUser.setFace(user.getFace());
-        BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
-        String hashedCpf = encriptador.encode(user.getCpf());
-        finalUser.setCpf(hashedCpf);
-        userService.save(finalUser);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        System.out.println(userService.validateCpf(user.getCpf()));
+        if (userService.validateCpf(user.getCpf())) {
+            User finalUser = new User();
+            finalUser.setName(user.getName());
+            finalUser.setFace(user.getFace());
+            BCryptPasswordEncoder encriptador = new BCryptPasswordEncoder();
+            String hashedCpf = encriptador.encode(user.getCpf());
+            finalUser.setCpf(hashedCpf);
+            userService.save(finalUser);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
     @DeleteMapping("/users/delete-user/{userId}")
