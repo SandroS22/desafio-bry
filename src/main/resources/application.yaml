@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: desafio-bry
+
+server:
+  port: 8080
