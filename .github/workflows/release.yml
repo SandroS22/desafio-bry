@@ -1,0 +1,32 @@
+name: Build e Publicação de Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write # Permissão necessária para o GitHub Actions criar a Release
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compilar e rodar testes com Maven
+        run: mvn clean package
+
+      - name: Publicar Release com o JAR gerado
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/*.jar
