@@ -4,3 +4,7 @@ spring:
 
 server:
   port: 8080
+
+bry:
+  alias: e2618a8b-20de-4dd2-b209-70912e3177f4
+  password: bry123456
