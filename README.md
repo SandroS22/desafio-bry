@@ -67,13 +67,28 @@ A aplicação será iniciada na porta **8080** (`http://localhost:8080`).
 
 ## Utilização dos Endpoints
 
-### 1. Assinar Arquivo (`POST /sign`)
+### 1. Assinar Arquivo (`POST /signature/`)
 
-Recebe um arquivo via `multipart/form-data`, gera a assinatura digital CMS com o conteúdo anexado utilizando a chave privada do certificado PKCS#12 (`certificado_teste_hub.pfx`) e algoritmo `SHA512withRSA`, salva a assinatura em `assinatura.txt` e retorna o conteúdo assinado codificado em Base64.
+Recebe a requisição via `multipart/form-data` e gera a assinatura digital CMS com o conteúdo anexado utilizando a chave privada do arquivo PKCS#12 (.pfx) com algoritmo `SHA512withRSA`.
 
+- **Parâmetros suportados:**
+  - `file`: o arquivo a ser assinado (se omitido, usa o arquivo padrão `src/main/resources/arquivos/doc.txt`);
+  - `pkcs12`: o arquivo PKCS#12 (.pfx) enviado no request (se omitido, carrega o certificado padrão de `resources/pkcs12/`);
+  - `password`: a senha do arquivo PKCS#12 (se omitida, usa a senha configurada no `application.yaml`).
+- **Gravação em disco:** Grava a assinatura em disco em notação binária ASN.1 como **`assinatura.p7s`** (`Files.write(Path.of("assinatura.p7s"), encoded)`).
+- **Retorno:** Retorna o conteúdo da assinatura CMS attached codificado em Base64 no corpo da resposta.
+
+**Chamada completa com upload de arquivo, pkcs12 e senha:**
 ```bash
-curl -X POST http://localhost:8080/sign \
-  -F "file=@src/main/resources/arquivos/doc.txt"
+curl -X POST http://localhost:8080/signature/ \
+  -F "file=@caminho/para/documento.txt" \
+  -F "pkcs12=@caminho/para/certificado.pfx" \
+  -F "password=sua_senha"
+```
+
+**Chamada simplificada (utiliza doc.txt e certificado padrão de resources):**
+```bash
+curl -X POST http://localhost:8080/signature/
 ```
 
 **Resposta (200 OK):**
@@ -83,16 +98,20 @@ MIIQ... (conteúdo da assinatura em Base64)
 
 ---
 
-### 2. Verificar Assinatura (`POST /verify`)
+### 2. Verificar Assinatura (`POST /verify/`)
 
-Recebe um arquivo contendo a assinatura digital em Base64 (como o gerado em `assinatura.txt`), decodifica o CMS, valida a integridade da assinatura criptográfica e a cadeia de confiança PKIX do certificado, e extrai os metadados do signatário.
+Recebe a requisição via `multipart/form-data` com o parâmetro `file` (arquivo assinado em Base64 no padrão CMS attached, aceitando também DER binário ou PEM com delimitadores).
 
+- **Validação de Cadeia Híbrida:** Carrega primeiro os certificados presentes em `classpath*:cadeia/*`. Caso a pasta `resources/cadeia/` esteja vazia ou não exista, realiza fallback extraindo a cadeia diretamente do KeyStore PKCS#12.
+- **Fallback de Arquivo:** Se chamado sem upload, busca e valida automaticamente o arquivo **`assinatura.p7s`** gravado em disco.
+
+**Chamada enviando arquivo Base64, PEM ou binário .p7s:**
 ```bash
-curl -X POST http://localhost:8080/verify \
-  -F "file=@assinatura.txt"
+curl -X POST http://localhost:8080/verify/ \
+  -F "file=@assinatura.p7s"
 ```
 
-**Exemplo de Resposta de Sucesso (200 OK):**
+**Exemplo de Resposta de Sucesso (200 OK com chaves exatas `Status` e `Infos`):**
 ```json
 {
   "Status": "VALIDO",
@@ -122,7 +141,7 @@ curl -X POST http://localhost:8080/verify \
 ├── src/
 │   ├── main/
 │   │   ├── java/com/github/sandros22/desafio_bry/
-│   │   │   ├── controller/      # Endpoints REST (/sign, /verify)
+│   │   │   ├── controller/      # Endpoints REST (/signature/, /verify/)
 │   │   │   ├── crypto/          # Lógica criptográfica (CmsSigner, CmsVerifier)
 │   │   │   ├── dto/             # Records de transferência de dados
 │   │   │   └── exception/       # GlobalExceptionHandler

@@ -1,11 +1,11 @@
 package com.github.sandros22.desafio_bry.crypto;
 
-import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -13,9 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Vector;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,7 +33,23 @@ class CmsSignerTest {
     }
 
     @Test
-    @DisplayName("Deve assinar dados anexados e gravar o arquivo assinatura.txt")
+    @DisplayName("Deve assinar dinamicamente com bytes PKCS#12 e senha enviados por parâmetro")
+    void testSignCmsAttached_DynamicPkcs12() throws Exception {
+        ClassPathResource pfxResource = new ClassPathResource("pkcs12/certificado_teste_hub.pfx");
+        byte[] pfxBytes = pfxResource.getInputStream().readAllBytes();
+        byte[] content = "Conteudo para teste dinamico".getBytes(StandardCharsets.UTF_8);
+
+        byte[] signedBytes = cmsSigner.signCmsAttached(content, pfxBytes, "bry123456");
+        assertNotNull(signedBytes);
+        assertTrue(signedBytes.length > 0);
+
+        CMSSignedData signedData = new CMSSignedData(signedBytes);
+        assertNotNull(signedData.getSignedContent());
+        assertArrayEquals(content, (byte[]) signedData.getSignedContent().getContent());
+    }
+
+    @Test
+    @DisplayName("Deve assinar dados anexados e gravar o arquivo binário assinatura.p7s")
     void testSignCmsAttachedSuccess() throws Exception {
         byte[] content = "Conteudo de teste para assinatura digital".getBytes(StandardCharsets.UTF_8);
 
@@ -44,11 +57,11 @@ class CmsSignerTest {
         assertNotNull(signedBytes);
         assertTrue(signedBytes.length > 0);
 
-        // Verifica integridade do arquivo assinatura.txt gerado
-        Path assinaturaPath = Path.of("assinatura.txt");
+        // Verifica integridade do arquivo binário assinatura.p7s gerado
+        Path assinaturaPath = Path.of("assinatura.p7s");
         assertTrue(Files.exists(assinaturaPath));
-        String fileContent = Files.readString(assinaturaPath).trim();
-        assertEquals(Base64.getEncoder().encodeToString(signedBytes), fileContent);
+        byte[] fileBytes = Files.readAllBytes(assinaturaPath);
+        assertArrayEquals(signedBytes, fileBytes);
 
         // Valida que o CMS gerado contém o conteúdo anexado
         CMSSignedData signedData = new CMSSignedData(signedBytes);
@@ -56,6 +69,21 @@ class CmsSignerTest {
         byte[] extractedContent = (byte[]) signedData.getSignedContent().getContent();
         assertArrayEquals(content, extractedContent);
         assertFalse(signedData.getSignerInfos().getSigners().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Deve carregar e assinar o arquivo padrão doc.txt em signDefaultDoc")
+    void testSignDefaultDoc() throws Exception {
+        byte[] defaultDoc = cmsSigner.loadDefaultDoc();
+        assertNotNull(defaultDoc);
+        assertTrue(defaultDoc.length > 0);
+
+        byte[] signedBytes = cmsSigner.signDefaultDoc();
+        assertNotNull(signedBytes);
+
+        CMSSignedData signedData = new CMSSignedData(signedBytes);
+        byte[] extractedContent = (byte[]) signedData.getSignedContent().getContent();
+        assertArrayEquals(defaultDoc, extractedContent);
     }
 
     @Test

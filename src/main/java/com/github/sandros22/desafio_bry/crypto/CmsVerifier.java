@@ -23,6 +23,7 @@ import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class CmsVerifier {
@@ -33,6 +34,7 @@ public class CmsVerifier {
         this.cmsSigner = cmsSigner;
     }
 
+    // Valida integridade, cadeia de confiança e extrai os metadados da assinatura CMS
     public VerifyResponse verifyBase64Cms(byte[] base64FileBytes) throws Exception {
         byte[] cmsBytes = decodeBase64(base64FileBytes);
         CMSSignedData signedData = new CMSSignedData(cmsBytes);
@@ -42,11 +44,25 @@ public class CmsVerifier {
         return new VerifyResponse(isValid ? "VALIDO" : "INVALIDO", extractInfos(signedData, signer, cert));
     }
 
+    // Aceita DER binário (tag ASN.1 0x30), PEM ou Base64 puro e retorna bytes CMS
     private byte[] decodeBase64(byte[] raw) {
-        String clean = new String(raw, StandardCharsets.UTF_8).replaceAll("\\s+", "");
+        if (raw.length > 0 && raw[0] == 0x30) {
+            try {
+                new CMSSignedData(raw);
+                return raw;
+            } catch (Exception ignored) {
+            }
+        }
+        String text = new String(raw, StandardCharsets.UTF_8).trim();
+        if (text.contains("-----BEGIN")) {
+            text = text.replaceAll("-----BEGIN[^-]+-----", "")
+                    .replaceAll("-----END[^-]+-----", "");
+        }
+        String clean = text.replaceAll("\\s+", "");
         return Base64.getDecoder().decode(clean);
     }
 
+    // Agrega CN do signatário, data da assinatura, hash e algoritmo de resumo
     private SignatureInfos extractInfos(CMSSignedData data, SignerInformation signer, X509Certificate cert) throws Exception {
         String cn = extractCn(cert);
         String signingTime = extractSigningTime(signer);
@@ -55,12 +71,14 @@ public class CmsVerifier {
         return new SignatureInfos(cn, signingTime, docHash, digestAlg);
     }
 
+    // Extrai o atributo Common Name (CN) do assunto do certificado X.509
     private String extractCn(X509Certificate cert) throws Exception {
         X500Name x500Name = new X509CertificateHolder(cert.getEncoded()).getSubject();
         RDN[] rdns = x500Name.getRDNs(BCStyle.CN);
         return rdns.length > 0 ? IETFUtils.valueToString(rdns[0].getFirst().getValue()) : "";
     }
 
+    // Obtém o atributo signingTime das propriedades assinadas
     private String extractSigningTime(SignerInformation signer) {
         if (signer.getSignedAttributes() == null) return null;
         Attribute attr = signer.getSignedAttributes().get(CMSAttributes.signingTime);
@@ -68,18 +86,21 @@ public class CmsVerifier {
         return Time.getInstance(attr.getAttrValues().getObjectAt(0)).getDate().toInstant().toString();
     }
 
+    // Calcula o resumo criptográfico do conteúdo anexado em formato hexadecimal
     private String computeContentHash(CMSSignedData data, String algorithm) throws Exception {
         byte[] content = (byte[]) data.getSignedContent().getContent();
         byte[] hash = MessageDigest.getInstance(algorithm).digest(content);
         return HexFormat.of().formatHex(hash);
     }
 
+    // Localiza e converte o certificado correspondente ao identificador do signatário no CMS
     private X509Certificate extractSignerCert(CMSSignedData data, SignerInformation signer) throws Exception {
         Collection<X509CertificateHolder> holders = data.getCertificates().getMatches(signer.getSID());
         if (holders.isEmpty()) throw new CMSException("Certificado do signatário ausente no CMS");
         return new JcaX509CertificateConverter().setProvider("BC").getCertificate(holders.iterator().next());
     }
 
+    // Verifica a assinatura digital contra a chave pública do signatário
     private boolean verifyIntegrity(SignerInformation signer, X509Certificate cert) {
         try {
             var verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert);
@@ -89,19 +110,38 @@ public class CmsVerifier {
         }
     }
 
+    // Constrói e valida o caminho de certificação PKIX até uma âncora confiável
     private boolean verifyTrustChain(X509Certificate signerCert) {
         try {
             List<X509Certificate> chain = loadChainCertificates();
             Set<TrustAnchor> anchors = getTrustAnchors(chain);
             if (anchors.stream().anyMatch(a -> a.getTrustedCert().equals(signerCert))) return true;
-            CertPath path = CertificateFactory.getInstance("X.509").generateCertPath(List.of(signerCert));
-            CertPathValidator.getInstance("PKIX").validate(path, buildPkixParams(anchors, chain));
-            return true;
+
+            List<X509Certificate> allCerts = new ArrayList<>(chain);
+            if (!allCerts.contains(signerCert)) {
+                allCerts.add(signerCert);
+            }
+
+            try {
+                X509CertSelector selector = new X509CertSelector();
+                selector.setCertificate(signerCert);
+                PKIXBuilderParameters builderParams = new PKIXBuilderParameters(anchors, selector);
+                builderParams.setRevocationEnabled(false);
+                builderParams.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(allCerts)));
+                CertPathBuilder.getInstance("PKIX").build(builderParams);
+                return true;
+            } catch (Exception e) {
+                // Fallback de validação direta caso a construção automática do caminho falhe
+                CertPath path = CertificateFactory.getInstance("X.509").generateCertPath(List.of(signerCert));
+                CertPathValidator.getInstance("PKIX").validate(path, buildPkixParams(anchors, chain));
+                return true;
+            }
         } catch (Exception e) {
             return false;
         }
     }
 
+    // Configura parâmetros PKIX e anexa certificados intermediários
     private PKIXParameters buildPkixParams(Set<TrustAnchor> anchors, List<X509Certificate> intermediates) throws Exception {
         PKIXParameters params = new PKIXParameters(anchors);
         params.setRevocationEnabled(false);
@@ -109,20 +149,31 @@ public class CmsVerifier {
         return params;
     }
 
+    // Identifica certificados raiz autoassinados como âncoras de confiança ou usa o topo da cadeia
     private Set<TrustAnchor> getTrustAnchors(List<X509Certificate> certs) {
-        if (certs.isEmpty()) throw new IllegalStateException("Nenhum certificado encontrado no PKCS12");
-        X509Certificate topCert = certs.stream()
+        if (certs.isEmpty()) throw new IllegalStateException("Nenhum certificado encontrado para cadeia de confiança");
+        List<X509Certificate> roots = certs.stream()
                 .filter(c -> c.getSubjectX500Principal().equals(c.getIssuerX500Principal()))
-                .findFirst()
-                .orElse(certs.get(certs.size() - 1));
-        return Set.of(new TrustAnchor(topCert, null));
+                .toList();
+        if (!roots.isEmpty()) {
+            return roots.stream().map(r -> new TrustAnchor(r, null)).collect(Collectors.toSet());
+        }
+        return Set.of(new TrustAnchor(certs.get(certs.size() - 1), null));
     }
 
-    private List<X509Certificate> loadChainCertificates() throws Exception {
-        KeyStore ks = cmsSigner.loadKeyStore();
-        String keyAlias = cmsSigner.resolveAlias(ks);
-        return Arrays.stream(ks.getCertificateChain(keyAlias))
-                .map(c -> (X509Certificate) c)
-                .toList();
+    // Carrega cadeia de resources/cadeia/ com fallback para a cadeia do KeyStore
+    public List<X509Certificate> loadChainCertificates() throws Exception {
+        List<X509Certificate> chain = new ArrayList<>(cmsSigner.loadCadeiaCertificates());
+        if (chain.isEmpty()) {
+            KeyStore ks = cmsSigner.loadKeyStore();
+            String keyAlias = cmsSigner.resolveAlias(ks);
+            var ksCerts = ks.getCertificateChain(keyAlias);
+            if (ksCerts != null) {
+                for (var c : ksCerts) {
+                    chain.add((X509Certificate) c);
+                }
+            }
+        }
+        return chain;
     }
 }

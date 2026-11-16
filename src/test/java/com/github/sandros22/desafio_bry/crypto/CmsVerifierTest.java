@@ -1,9 +1,6 @@
 package com.github.sandros22.desafio_bry.crypto;
 
 import com.github.sandros22.desafio_bry.dto.VerifyResponse;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
@@ -36,6 +33,56 @@ class CmsVerifierTest {
 
     @Autowired
     private CmsVerifier cmsVerifier;
+
+    @Test
+    @DisplayName("Deve verificar diretamente arquivo binário DER (.p7s) sem codificação Base64")
+    void testVerifyDirectBinaryP7s() throws Exception {
+        byte[] content = "Conteudo para teste direto de .p7s".getBytes(StandardCharsets.UTF_8);
+        byte[] signedBytes = cmsSigner.signCmsAttached(content);
+
+        // Passa diretamente os bytes binários (sem converter para base64)
+        VerifyResponse response = cmsVerifier.verifyBase64Cms(signedBytes);
+
+        assertNotNull(response);
+        assertEquals("VALIDO", response.Status());
+        assertNotNull(response.Infos());
+    }
+
+    @Test
+    @DisplayName("Deve verificar assinatura formatada em PEM (com delimitadores -----BEGIN CMS-----)")
+    void testVerifyPemFormattedCms() throws Exception {
+        byte[] content = "Conteudo para teste PEM".getBytes(StandardCharsets.UTF_8);
+        byte[] signedBytes = cmsSigner.signCmsAttached(content);
+        String base64 = Base64.getEncoder().encodeToString(signedBytes);
+        String pem = "-----BEGIN CMS-----\n" + base64 + "\n-----END CMS-----\n";
+
+        VerifyResponse response = cmsVerifier.verifyBase64Cms(pem.getBytes(StandardCharsets.UTF_8));
+        assertNotNull(response);
+        assertEquals("VALIDO", response.Status());
+        assertNotNull(response.Infos());
+    }
+
+    @Test
+    @DisplayName("Deve fazer fallback para a cadeia do KeyStore quando a pasta cadeia estiver vazia")
+    void testLoadChainCertificates_FallbackToKeyStoreWhenCadeiaEmpty() throws Exception {
+        CmsSigner mockSigner = org.mockito.Mockito.mock(CmsSigner.class);
+        KeyStore mockKs = org.mockito.Mockito.mock(KeyStore.class);
+
+        // Retorna cadeia vazia para recursos/cadeia/
+        org.mockito.Mockito.when(mockSigner.loadCadeiaCertificates()).thenReturn(Collections.emptyList());
+        org.mockito.Mockito.when(mockSigner.loadKeyStore()).thenReturn(mockKs);
+        org.mockito.Mockito.when(mockSigner.resolveAlias(mockKs)).thenReturn("mock-alias");
+
+        X509Certificate mockCert = org.mockito.Mockito.mock(X509Certificate.class);
+        org.mockito.Mockito.when(mockKs.getCertificateChain("mock-alias")).thenReturn(new java.security.cert.Certificate[]{mockCert});
+
+        CmsVerifier verifier = new CmsVerifier(mockSigner);
+        List<X509Certificate> chain = verifier.loadChainCertificates();
+
+        assertNotNull(chain);
+        assertEquals(1, chain.size());
+        assertEquals(mockCert, chain.get(0));
+    }
 
     @Test
     @DisplayName("Deve verificar com sucesso uma assinatura válida gerada pelo CmsSigner")
